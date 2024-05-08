@@ -28,12 +28,6 @@ write.csv(train_set, "train_set.csv", row.names = FALSE)
 write.csv(valid_set, "valid_set.csv", row.names = FALSE)
 write.csv(test_set, "test_set.csv", row.names = FALSE)
 
-#Checking skewness
-mean(df$Risk.Profile == 0)
-mean(df$Risk.Profile == 1)
-mean(df$Risk.Profile == 2)
-mean(df$Risk.Profile == 3)
-
 #BUILD SVM CLASSIFIER
 
 kern_type<-"radial" #SPECIFY KERNEL TYPE
@@ -50,8 +44,8 @@ SVM_Model<- svm(Risk.Profile ~ Premium.Amount+Age+Credit.Score,
 print(SVM_Model)
 
 #REPORT IN AND OUT-OF-SAMPLE ERRORS (1-ACCURACY)
-E_IN_PRETUNE <- 1-mean(predict(SVM_Model, train_set)==train_set$Risk.Profile)
-E_OUT_PRETUNE <- 1-mean(predict(SVM_Model, test_set)==test_set$Risk.Profile)
+Accuracy_in_pretune <- mean(predict(SVM_Model, train_set)==train_set$Risk.Profile)
+Accuracy_out_pretune <- mean(predict(SVM_Model, test_set)==test_set$Risk.Profile)
 
 #TUNING THE SVM 
 tune_control<-tune.control(cross=10) #SET K-FOLD CV PARAMETERS
@@ -72,25 +66,25 @@ SVM_Retune<- svm(Risk.Profile ~ Premium.Amount+Age+Credit.Score,
                  data = train_set, 
                  type = "C-classification", 
                  kernel = kern_type,
-                 degree = TUNE$best.parameters$degree,
-                 gamma = TUNE$best.parameters$gamma,
-                 coef0 = TUNE$best.parameters$coef0,
-                 cost = TUNE$best.parameters$cost,
+                 degree = 2,
+                 gamma = 0.0625,
+                 coef0 = 0,
+                 cost = 1000,
                  scale = FALSE)
 print(SVM_Retune)
 
 #REPORT IN AND OUT-OF-SAMPLE ERRORS (1-ACCURACY) ON RETUNED MODEL
-E_IN_RETUNE<-1-mean(predict(SVM_Retune, train_set)==train_set$Risk.Profile)
-E_OUT_RETUNE<-1-mean(predict(SVM_Retune, test_set)==test_set$Risk.Profile)
+Accuracy_in_tune<-mean(predict(SVM_Retune, train_set)==train_set$Risk.Profile)
+Accuracy_out_tune<-mean(predict(SVM_Retune, test_set)==test_set$Risk.Profile)
 
 #SUMMARIZE RESULTS IN A TABLE:
-TUNE_TABLE <- matrix(c(E_IN_PRETUNE, 
-                       E_IN_RETUNE,
-                       E_OUT_PRETUNE,
-                       E_OUT_RETUNE),
+TUNE_TABLE <- matrix(c(Accuracy_in_pretune, 
+                       Accuracy_in_tune,
+                       Accuracy_out_pretune,
+                       Accuracy_out_tune),
                      ncol=2, 
                      byrow=TRUE)
 
 colnames(TUNE_TABLE) <- c('UNTUNED', 'TUNED')
-rownames(TUNE_TABLE) <- c('E_IN', 'E_OUT')
+rownames(TUNE_TABLE) <- c('ACCURACY_IN', 'ACCURACY_OUT')
 TUNE_TABLE
